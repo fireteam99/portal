@@ -1,0 +1,1 @@
+{"users": {"1": {"username": "ray", "password": "password", "domains": ["student"]}}, "objects": {"1": {"name": "chrome", "types": ["application"]}, "2": {"name": "config", "types": ["admin"]}}, "access": {"1": {"operation": "write", "domain": "student", "type": "application"}, "2": {"operation": "read", "domain": "student", "type": "admin"}}}
