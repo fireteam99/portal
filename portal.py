@@ -1,210 +1,215 @@
 import sys
 from tinydb import TinyDB, Query
-from docopt import docopt
 
 
-def main():
-    if sys.version_info < (3, 0):
-        print('Please make sure you are using Python 3.')
-        return
+class Portal:
+    CMD_INFO = """Usage:
+        portal AddUser <user> <password>
+        portal Authenticate <user> <password>
+        portal SetDomain <user> <domain>
+        portal DomainInfo <domain>
+        portal SetType <object> <type>
+        portal TypeInfo <type>
+        portal AddAccess <operation> <domain> <type>
+        portal CanAccess <operation> <user> <object>
+        portal Reset
+        portal Help
+        """
 
-    # initialize the database
-    db = TinyDB('db.json')
+    def __init__(self, db):
+        self.db = db
 
-    users = db.table('users')
-    User = Query()
+        self.users = self.db.table('users')
+        self.User = Query()
 
-    objects = db.table('objects')
-    Object = Query()
+        self.objects = self.db.table('objects')
+        self.Object = Query()
 
-    accesses = db.table('access')
-    Access = Query()
+        self.accesses = self.db.table('access')
+        self.Access = Query()
 
-    cmds_passed = len(sys.argv)
-
-    if len(sys.argv) < 2:
-        print('Error: invalid command')
-        return
-
-    base_cmd = sys.argv[1].lower()
-
-    if base_cmd == 'adduser':
-        if cmds_passed != 4:
-            print('Error: invalid number of arguments passed')
-            return
-        username = sys.argv[2]
-        password = sys.argv[3]
-        if users.get(User.username == username):
-            print ('Error: user exists')
-            return
+    def add_user(self, username, password):
+        if self.users.get(self.User.username == username):
+            return 'Error: user exists'
         if username == '':
-            print('Error: username missing')
-            return
-        users.insert({'username': username, 'password': password, 'domains': []})
-        print('Success')
-        return
+            return 'Error: username missing'
 
-    if base_cmd == 'authenticate':
-        if cmds_passed != 4:
-            print('Error: invalid number of arguments passed')
-            return
-        username = sys.argv[2]
-        password = sys.argv[3]
-        user = users.get(User.username == username)
+        self.users.insert({'username': username, 'password': password, 'domains': []})
+        return 'Success'
+
+    def authenticate(self, username, password):
+        user = self.users.get(self.User.username == username)
         if not user:
-            print('Error: no such user')
-            return
+            return 'Error: no such user'
         if user['password'] != password:
-            print('Error: bad password')
-            return
-        print('Success')
-        return
+            return 'Error: bad password'
+        return 'Success'
 
-    if base_cmd == 'setdomain':
-        if cmds_passed != 4:
-            print('Error: invalid number of arguments passed')
-            return
-        username = sys.argv[2]
-        domain = sys.argv[3]
-
+    def set_domain(self, username, domain):
         # check that user exists
-        user = users.get(User.username == username)
+        user = self.users.get(self.User.username == username)
         if not user:
-            print('Error: no such user')
-            return
+            return 'Error: no such user'
 
         if domain == '':
-            print('Error: missing domain')
-            return
+            return 'Error: missing domain'
 
         # add the domain to the user if it doesn't already exist
         if domain not in user['domains']:
-            users.update({'domains': user['domains'] + [domain]}, User.username == username)
+            self.users.update({'domains': user['domains'] + [domain]}, self.User.username == username)
 
-        print('Success')
-        return
+        return 'Success'
 
-    if base_cmd == 'domaininfo':
-        if cmds_passed != 3:
-            print('Error: invalid number of arguments passed')
-            return
-        domain = sys.argv[2]
+    def domain_info(self, domain):
         if domain == '':
-            print('Error: missing domain')
-            return
-        domain_users = users.search(User.domains.any(domain))
-        for du in domain_users:
-            print(du['username'])
+            return 'Error: missing domain'
 
-        return
+        domain_users = self.users.search(self.User.domains.any(domain))
+        return '\n'.join([domain_user['username'] for domain_user in domain_users])
 
-    if base_cmd == 'settype':
-        if cmds_passed != 4:
-            print('Error: invalid number of arguments passed')
-            return
-        object_name = sys.argv[2]
-        type_name = sys.argv[3]
-
+    def set_type(self, object_name, type_name):
         if object_name == '':
-            print('Error: missing object')
-            return
+            return 'Error: missing object'
+
         if type_name == '':
-            print('Error: missing type')
-            return
+            return 'Error: missing type'
 
         # check if object exists
-        object = objects.get(Object.name == object_name)
+        object = self.objects.get(self.Object.name == object_name)
         if object and type_name not in object['types']:
-            objects.update({'types': object['types'] + [type_name]})
+            self.objects.update({'types': object['types'] + [type_name]})
         else:
-            objects.insert({'name': object_name, 'types': [type_name]})
+            self.objects.insert({'name': object_name, 'types': [type_name]})
 
-        print('Success')
-        return
+        return 'Success'
 
-    if base_cmd == 'typeinfo':
-        if cmds_passed != 3:
-            print('Error: invalid number of arguments passed')
-            return
-        type_name = sys.argv[2]
+    def type_info(self, type_name):
         if type_name == '':
-            print('Error: missing type')
-            return
-        type_objects = objects.search(Object.types.any(type_name))
-        for to in type_objects:
-            print(to['name'])
+            return 'Error: missing type'
 
-        return
+        type_objects = self.objects.search(self.Object.types.any(type_name))
+        return '\n'.join([type_object['name'] for type_object in type_objects])
 
-    if base_cmd == 'addaccess':
-        if cmds_passed != 5:
-            print('Error: invalid number of arguments passed')
-            return
-
-        operation = sys.argv[2]
-        domain_name = sys.argv[3]
-        type_name = sys.argv[4]
-
+    def add_access(self, operation, domain_name, type_name):
         if operation == '':
-            print('Error: missing operation')
-            return
+            return 'Error: missing operation'
+
         if domain_name == '':
-            print('Error: missing domain')
-            return
+            return 'Error: missing domain'
+
         if type_name == '':
-            print('Error: missing type')
-            return
+            return 'Error: missing type'
 
-        access = accesses.get((Access.operation == operation) & (Access.domain == domain_name) & (Access.type == type_name))
+        access = self.accesses.get(
+            (self.Access.operation == operation) & (self.Access.domain == domain_name) & (
+                    self.Access.type == type_name))
         if not access:
-            accesses.insert({'operation': operation, 'domain': domain_name, 'type': type_name})
+            self.accesses.insert({'operation': operation, 'domain': domain_name, 'type': type_name})
 
-        print('Success')
-        return
+        return 'Success'
 
-    if base_cmd == 'canaccess':
-        if cmds_passed != 5:
-            print('Error: invalid number of arguments passed')
-            return
-
-        operation = sys.argv[2]
-        username = sys.argv[3]
-        object_name = sys.argv[4]
-
+    def can_access(self, operation, username, object_name):
         if operation == '':
-            print('Error: missing operation')
-            return
+            return 'Error: missing operation'
+
         if username == '':
-            print('Error: missing user')
-            return
+            return 'Error: missing domain'
+
         if object_name == '':
-            print('Error: missing object')
-            return
+            return 'Error: missing object'
 
         # query the user
-        user = users.get(User.username == username)
+        user = self.users.get(self.User.username == username)
         if not user:
-            print('Error: user not found')
-            return
+            return 'Error: user not found'
 
         # query the object
-        object = objects.get(Object.name == object_name)
+        object = self.objects.get(self.Object.name == object_name)
         if not object:
-            print('Error: object not found')
-            return
+            return 'Error: object not found'
 
         for domain in user['domains']:
             for type in object['types']:
-                if accesses.get((Access.operation == operation) & (Access.domain == domain) & (Access.type == type)):
-                    print('Success')
-                    return
+                if self.accesses.get(
+                        (self.Access.operation == operation) & (self.Access.domain == domain) & (
+                                self.Access.type == type)):
+                    return 'Success'
 
-        print('Error: access denied')
-        return
+        return 'Error: access denied'
 
-    if base_cmd == 'reset':
-        db.drop_tables()
-        print('Success: cleared database.')
+    def reset(self):
+        self.db.drop_tables()
+        return 'Success: cleared database'
+
+    def execute(self, args):
+        args_passed = len(args)
+
+        if args_passed < 2:
+            return Portal.CMD_INFO
+
+        base_cmd = args[1].lower()
+
+        if base_cmd == 'adduser':
+            if args_passed != 4:
+                return 'Usage: portal AddUser <user> <password>'
+
+            return self.add_user(args[2], args[3])
+
+        if base_cmd == 'authenticate':
+            if args_passed != 4:
+                return 'Usage: portal Authenticate <user> <password>'
+
+            return self.authenticate(args[2], args[3])
+
+        if base_cmd == 'setdomain':
+            if args_passed != 4:
+                return 'Usage: portal SetDomain <user> <domain>'
+
+            return self.set_domain(args[2], args[3])
+
+        if base_cmd == 'domaininfo':
+            if args_passed != 3:
+                return 'Usage: portal DomainInfo <domain>'
+
+            return self.domain_info(args[2])
+
+        if base_cmd == 'settype':
+            if args_passed != 4:
+                return 'Usage: portal SetType <object> <type>'
+
+            return self.set_type(args[2], args[3])
+
+        if base_cmd == 'typeinfo':
+            if args_passed != 3:
+                return 'Usage: portal TypeInfo <type>'
+
+            return self.type_info(args[2])
+
+        if base_cmd == 'addaccess':
+            if args_passed != 5:
+                return 'Usage: AddAccess <operation> <domain> <type>'
+
+            return self.add_access(args[2], args[3], args[4])
+
+        if base_cmd == 'canaccess':
+            if args_passed != 5:
+                return 'Usage: CanAccess <operation> <user> <object>'
+
+            return self.can_access(args[2], args[3], args[4])
+
+        if base_cmd == 'reset':
+            return self.reset()
+
+        if base_cmd == 'help':
+            return Portal.CMD_INFO
+
+        # an invalid command was entered
+        return Portal.CMD_INFO
+
+
+def main():
+    portal = Portal(TinyDB('db.json'))
+    print(portal.execute(sys.argv))
 
 
 if __name__ == '__main__':
