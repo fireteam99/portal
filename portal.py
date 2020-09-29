@@ -208,6 +208,9 @@ class Portal:
 
 
 def main():
+    if sys.version_info < (3, 0):
+        print('Please make sure you are using Python 3.')
+        return
     portal = Portal(TinyDB('db.json'))
     print(portal.execute(sys.argv))
 

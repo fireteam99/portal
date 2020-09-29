@@ -131,3 +131,6 @@ dmypy.json
 # storage
 db.json
 test_db.json
+
+# coverage
+.coverage

@@ -58,6 +58,11 @@ class TestPortal(unittest.TestCase):
         self.assertEqual(created_object['name'], 'chrome', 'Object name should be chrome.')
         self.assertIn('application', created_object['types'], 'Object should be associated with type application.')
 
+        self.assertEqual(self.portal.set_type('chrome', 'browser'), 'Success')
+        updated_object = self.portal.objects.get(self.portal.Object.name == 'chrome')
+        self.assertIn('application', updated_object['types'], 'Object should be associated with type application.')
+        self.assertIn('browser', updated_object['types'], 'Object should be associated with type browser.')
+
         self.assertEqual(self.portal.set_type('', 'application'), 'Error: missing object', 'Should return error if object is empty.')
         self.assertEqual(self.portal.set_type('chrome', ''), 'Error: missing type', 'Should return error if type is empty.')
 
@@ -140,6 +145,11 @@ class TestPortal(unittest.TestCase):
         self.assertEqual(self.portal.can_access('write', 'fred', 'essay.txt'), 'Error: user not found', 'fred does not exist and should return an error')
         self.assertEqual(self.portal.can_access('write', 'james', 'random.csv'), 'Error: object not found', 'random.csv does not exist and should return an error')
 
+        # checking missing arguments
+        self.assertEqual(self.portal.can_access('', 'james', 'hosts.txt'), 'Error: missing operation', "Should throw an error if operation is empty.")
+        self.assertEqual(self.portal.can_access('read', '', 'hosts.txt'), 'Error: missing domain', "Should throw an error if domain is empty.")
+        self.assertEqual(self.portal.can_access('read', 'james', ''), 'Error: missing object', "Should throw an error if type is empty.")
+
     def test_execution(self):
         # testing invalid commands
         self.assertEqual(self.portal.execute(['portal.py', 'asdf']), self.portal.CMD_INFO)
@@ -148,6 +158,9 @@ class TestPortal(unittest.TestCase):
         # run through short scenario
         self.assertEqual(self.portal.execute(['portal.py', 'AddUser', 'bob', 'password']), 'Success')
         self.assertEqual(self.portal.execute(['portal.py', 'AddUser', 'alice', 'password']), 'Success')
+
+        self.assertEqual(self.portal.execute(['portal.py', 'Authenticate', 'bob', 'password']), 'Success')
+        self.assertEqual(self.portal.execute(['portal.py', 'Authenticate', 'alice', 'password']), 'Success')
 
         self.assertEqual(self.portal.execute(['portal.py', 'SetDomain', 'bob', 'employee']), 'Success')
         self.assertEqual(self.portal.execute(['portal.py', 'SetDomain', 'alice', 'management']), 'Success')
@@ -168,6 +181,27 @@ class TestPortal(unittest.TestCase):
         self.assertEqual(self.portal.execute(['portal.py', 'CanAccess', 'write', 'bob', 'timesheet']), 'Error: access denied')
         self.assertEqual(self.portal.execute(['portal.py', 'CanAccess', 'write', 'alice', 'timesheet']), 'Success')
         self.assertEqual(self.portal.execute(['portal.py', 'CanAccess', 'write', 'alice', 'word']), 'Error: access denied')
+
+        # test reset
+        self.assertEqual(self.portal.execute(['portal.py', 'Reset']), 'Success: cleared database')
+
+        self.assertEqual(self.portal.execute(['portal.py', 'Help']), self.portal.CMD_INFO)
+
+    def test_execute_handle_error(self):
+        self.assertEqual(self.portal.execute(['portal.py', 'AddUser']), 'Usage: portal AddUser <user> <password>')
+        self.assertEqual(self.portal.execute(['portal.py', 'Authenticate']), 'Usage: portal Authenticate <user> <password>')
+        self.assertEqual(self.portal.execute(['portal.py', 'SetDomain']), 'Usage: portal SetDomain <user> <domain>')
+        self.assertEqual(self.portal.execute(['portal.py', 'DomainInfo']), 'Usage: portal DomainInfo <domain>')
+        self.assertEqual(self.portal.execute(['portal.py', 'SetType']), 'Usage: portal SetType <object> <type>')
+        self.assertEqual(self.portal.execute(['portal.py', 'TypeInfo']), 'Usage: portal TypeInfo <type>')
+        self.assertEqual(self.portal.execute(['portal.py', 'AddAccess']), 'Usage: AddAccess <operation> <domain> <type>')
+        self.assertEqual(self.portal.execute(['portal.py', 'CanAccess']), 'Usage: CanAccess <operation> <user> <object>')
+
+    def test_reset(self):
+        self.assertEqual(self.portal.add_user('bob', 'password123'), 'Success')
+        self.assertEqual(self.portal.authenticate('bob', 'password123'), 'Success')
+        self.assertEqual(self.portal.reset(), 'Success: cleared database')
+        self.assertEqual(self.portal.authenticate('bob', 'password123'), 'Error: no such user')
 
     def tearDown(self):
         self.portal.reset()
