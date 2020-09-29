@@ -207,5 +207,5 @@ class TestPortal(unittest.TestCase):
         self.portal.reset()
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     unittest.main()

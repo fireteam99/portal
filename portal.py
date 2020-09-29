@@ -207,7 +207,7 @@ class Portal:
         return Portal.CMD_INFO
 
 
-def main():
+def main():  # pragma: no cover
     if sys.version_info < (3, 0):
         print('Please make sure you are using Python 3.')
         return
@@ -215,5 +215,5 @@ def main():
     print(portal.execute(sys.argv))
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
