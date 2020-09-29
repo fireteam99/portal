@@ -8,7 +8,7 @@ This project is a simplified implementation of an access control library. I used
 1. Clone the repository to a local directory.
 2. Make sure you have python 3 available on your system.
 3. Install the required dependencies by running `pip install -r requirements.txt` on iLabs run `pip3 install --user -r requirements.txt`. Only tinydb is technically required to run the program, however the coverage package is required to view code coverage.
-4. Run the tests using `python -m unit` on iLabs run `python3 -m unit`
+4. Run the tests using `python -m unittest` on iLabs run `python3 -m unittest`
 5. Generate code coverage by running `coverage run -m unittest tests.py`
 6. View the coverage report in the terminal with `coverage report` or in html with `coverage html`
 
