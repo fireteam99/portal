@@ -26,6 +26,7 @@ python portal.py CanAccess <operation> <user> <object>
 python portal.py Reset
 python portal.py Help
 ```
+The `Reset` command will clear the database while the `Help` command will show a prompt of the API.
 You can alias `python portal.py` to `portal` in bash if you want to make the cli more concise.
 
 ## Sample Test Case
