@@ -19,13 +19,13 @@ class Portal:
     def __init__(self, db):
         self.db = db
 
-        self.users = self.db.table('users')
+        self.users = self.db.table('users', cache_size=0)
         self.User = Query()
 
-        self.objects = self.db.table('objects')
+        self.objects = self.db.table('objects', cache_size=0)
         self.Object = Query()
 
-        self.accesses = self.db.table('access')
+        self.accesses = self.db.table('access', cache_size=0)
         self.Access = Query()
 
     def add_user(self, username, password):
@@ -76,8 +76,9 @@ class Portal:
 
         # check if object exists
         object = self.objects.get(self.Object.name == object_name)
-        if object and type_name not in object['types']:
-            self.objects.update({'types': object['types'] + [type_name]})
+        if object:
+            if type_name not in object['types']:
+                self.objects.update({'types': object['types'] + [type_name]}, self.Object.name == object_name)
         else:
             self.objects.insert({'name': object_name, 'types': [type_name]})
 

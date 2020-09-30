@@ -1,6 +1,7 @@
 import unittest
 from portal import Portal
 from tinydb import TinyDB
+import random
 import warnings
 
 
@@ -8,6 +9,8 @@ class TestPortal(unittest.TestCase):
 
     def setUp(self):
         warnings.filterwarnings(action="ignore", message="unclosed", category=ResourceWarning)
+        self.random = random
+        self.random.seed(10)
         self.portal = Portal(TinyDB('test_db.json'))
         self.portal.reset()
 
@@ -31,10 +34,15 @@ class TestPortal(unittest.TestCase):
 
     def test_set_domain(self):
         self.portal.add_user('bob', 'password123')
-        self.portal.set_domain('bob', 'student')
+        self.assertEqual(self.portal.set_domain('bob', 'student'), 'Success')
         added_user = self.portal.users.get(self.portal.User.username == 'bob')
-        self.assertTrue(added_user, 'A user with username "bob" should exists.')
+        self.assertTrue(added_user, 'A user with username "bob" should exist.')
         self.assertIn('student', added_user['domains'], 'Bob should belong in the "student" domain.')
+
+        self.assertEqual(self.portal.set_domain('bob', 'student'), 'Success')
+        updated_user = self.portal.users.get(self.portal.User.username == 'bob')
+        self.assertTrue(updated_user, 'A user with username "bob" should exist.')
+        self.assertEqual(updated_user['domains'].count('student'), 1, 'The student domain should not be duplicated.')
 
         self.assertEqual(self.portal.set_domain('alice', 'student'), 'Error: no such user')
 
@@ -63,6 +71,12 @@ class TestPortal(unittest.TestCase):
         self.assertIn('application', updated_object['types'], 'Object should be associated with type application.')
         self.assertIn('browser', updated_object['types'], 'Object should be associated with type browser.')
 
+        self.assertEqual(self.portal.set_type('chrome', 'browser'), 'Success')
+        updated_object = self.portal.objects.get(self.portal.Object.name == 'chrome')
+        self.assertIn('application', updated_object['types'], 'Object should be associated with type application.')
+        self.assertIn('browser', updated_object['types'], 'Object should be associated with type browser.')
+        self.assertEqual(updated_object['types'].count('browser'), 1, 'Chrome should not be duplicated.')
+
         self.assertEqual(self.portal.set_type('', 'application'), 'Error: missing object', 'Should return error if object is empty.')
         self.assertEqual(self.portal.set_type('chrome', ''), 'Error: missing type', 'Should return error if type is empty.')
 
@@ -83,12 +97,16 @@ class TestPortal(unittest.TestCase):
 
     def test_add_access(self):
         self.assertEqual(self.portal.add_access('write', 'student', 'document'), 'Success')
-        created_access = self.portal.accesses.get(self.portal.Access.operation == 'write')
+        created_access = self.portal.accesses.get((self.portal.Access.operation == 'write') & (self.portal.Access.domain == 'student') & (self.portal.Access.type == 'document'))
         self.assertTrue(created_access, 'A new access entry should have been created.')
 
         self.assertEqual(created_access['operation'], 'write', 'The operation field should be "write".')
         self.assertEqual(created_access['domain'], 'student', 'The domain field should be "student".')
         self.assertEqual(created_access['type'], 'document', 'The type field should be "document".')
+
+        self.assertEqual(self.portal.add_access('write', 'student', 'document'), 'Success')
+        accesses = self.portal.accesses.search((self.portal.Access.operation == 'write') & (self.portal.Access.domain == 'student') & (self.portal.Access.type == 'document'))
+        self.assertEqual(len(accesses), 1, 'There should be no duplicate entries in the database.')
 
         self.assertEqual(self.portal.add_access('', 'student', 'document'), 'Error: missing operation', "Should throw an error if operation is empty.")
         self.assertEqual(self.portal.add_access('write', '', 'document'), 'Error: missing domain', "Should throw an error if domain is empty.")
@@ -197,6 +215,55 @@ class TestPortal(unittest.TestCase):
         self.assertEqual(self.portal.execute(['portal.py', 'AddAccess']), 'Usage: AddAccess <operation> <domain> <type>')
         self.assertEqual(self.portal.execute(['portal.py', 'CanAccess']), 'Usage: CanAccess <operation> <user> <object>')
 
+    def test_stress(self):
+        num_users = 100
+        num_domains = 20
+
+        num_objects = 100
+        num_types = 20
+
+        num_operations = 4
+
+        max_access = 20
+
+        # generate users and assign domains
+        for x in range(num_users):
+            username = 'u' + str(x)
+            password = 'p' + str(x)
+            self.portal.add_user(username, password)
+            for y in range(self.random.randint(0, num_domains)):
+                random_domain = 'd' + str(self.random.randint(0, num_domains - 1))
+                self.portal.set_domain(username, random_domain)
+
+        # generate objects
+        for x in range(num_objects):
+            object_name = 'o' + str(x)
+            for y in range(self.random.randint(0, num_types - 1)):
+                random_type = 't' + str(self.random.randint(0, num_types - 1))
+                self.portal.set_type(object_name, random_type)
+
+        # generate accesses
+        for x in range(max_access):
+            random_operation = 'op' + str(self.random.randint(0, num_operations - 1))
+            random_domain = 'd' + str(self.random.randint(0, num_domains - 1))
+            random_type = 't' + str(self.random.randint(0, num_types - 1))
+            self.portal.add_access(random_operation, random_domain, random_type)
+
+        # test domain info
+        for x in range(num_domains):
+            self.portal.domain_info('d' + str(x))
+
+        # test type info
+        for x in range(num_types):
+            self.portal.type_info('t' + str(x))
+
+        # test can access
+        for x in range(max_access):
+            random_operation = 'op' + str(self.random.randint(0, num_operations - 1))
+            random_user = 'u' + str(self.random.randint(0, num_users - 1))
+            random_type = 't' + str(self.random.randint(0, num_types - 1))
+            self.portal.can_access(random_operation, random_user, random_type)
+
     def test_reset(self):
         self.assertEqual(self.portal.add_user('bob', 'password123'), 'Success')
         self.assertEqual(self.portal.authenticate('bob', 'password123'), 'Success')
@@ -204,7 +271,8 @@ class TestPortal(unittest.TestCase):
         self.assertEqual(self.portal.authenticate('bob', 'password123'), 'Error: no such user')
 
     def tearDown(self):
-        self.portal.reset()
+        # self.portal.reset()
+        pass
 
 
 if __name__ == '__main__':  # pragma: no cover

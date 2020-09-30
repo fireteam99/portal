@@ -2,7 +2,7 @@
 Project 1 for CS419 Computer Security at Rutgers University.
 
 ## Description
-This project is a simplified implementation of an access control library. I used [tinydb](https://tinydb.readthedocs.io/en/latest/), a lightweight document based database to handle data persistence. Any persisted data will reside in db.json by default which will be generated if it does not exist. There are three main collections: users, objects, and accesses. Domains and types are denormalized in a list within user and object documents respectively. Access documents represent a mapping between operations, domains, and types. This repository is well tested with 100% code coverage. The source code resides in `portal.py` and tests in `tests.py`.
+This project is a simplified implementation of an access control library. I used [tinydb](https://tinydb.readthedocs.io/en/latest/), a lightweight document based database to handle data persistence. Any persisted data will reside in db.json by default which will be generated if it does not exist. There are three main collections: users, objects, and accesses. Domains and types are denormalized in a list within user and object documents respectively. Access documents represent a mapping between operations, domains, and types. This repository is well tested with 100% code coverage, and is fairly performant. The source code resides in `portal.py` and tests in `tests.py`.
 
 ## Local Setup
 1. Clone the repository to a local directory by running `git clone https://github.com/fireteam99/portal.git` or unzip the archive.
