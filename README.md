@@ -6,10 +6,10 @@ This project is a simplified implementation of an access control library. I used
 
 ## Local Setup
 1. Clone the repository to a local directory by running `git clone https://github.com/fireteam99/portal.git` or unzip the archive.
-2. Make sure you have python 3 available on your system.
+2. Make sure you have python 3 available on your system. On iLab machines make sure to first run `export PATH="$PATH:/koko/system/anaconda/bin"`, then in the `/portal` directory, activate a python 3 environment by running `source activate python36`. For more information check the [iLabs documentation ](https://resources.cs.rutgers.edu/docs/using-python-on-cs-linux-machines/).
 3. Install the required dependencies by running `pip install -r requirements.txt` on iLabs run `pip3 install --user -r requirements.txt`. Only tinydb is technically required to run the program, however the coverage package is required to view code coverage.
 4. Run the tests using `python -m unittest` on iLabs run `python3 -m unittest`
-5. Generate code coverage by running `coverage run -m unittest tests.py`
+5. Generate code coverage by installing "coverage" using `pip install coverage==5.3` on iLabs use `pip3 install --user coverage==5.3`, then run `coverage run -m unittest tests.py`
 6. View the coverage report in the terminal with `coverage report` or in html with `coverage html`
 
 ## Usage

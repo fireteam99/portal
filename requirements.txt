@@ -1,2 +1,1 @@
-coverage==5.3
 tinydb==4.1.1
